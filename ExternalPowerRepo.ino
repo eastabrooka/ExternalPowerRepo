@@ -12,12 +12,18 @@
   
 #include "ESP8266WiFi.h"
 #include "WiFiClient.h"
+#include <Wire.h>
+#include <Adafruit_ADS1015.h>
+
 #include "SecureCreds.h"
 
 #define SECOND 1000
 #define MINUTE 60*SECOND
 #define SAMPLE_WINDOW 60000
 //5*MINUTE
+
+
+Adafruit_ADS1115 ads(0x48);
 
 // replace with your channel’s thingspeak API key and your SSID and password
 String apiKey = APIKEY;
@@ -27,6 +33,9 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("\nPower Monitor Booting");
+
+  Serial.println("Bringing External ADC Online");
+  ads.begin();
 }
 
 // Post to Thingspeak. HTTP Push. 
@@ -88,5 +97,22 @@ void CheckForSendUpdate() {
 
 void loop() {
   CheckForSendUpdate();
+
+  int16_t adc0, adc1, adc2, adc3;
+ 
+adc0 = ads.readADC_SingleEnded(0);
+Serial.print("AIN0: ");
+Serial.println(adc0);
+/*Serial.print("AIN1: ");
+Serial.println(adc1);
+Serial.print("AIN2: ");
+Serial.println(adc2);
+Serial.print("AIN3: ");
+Serial.println(adc3);
+Serial.println(" ");
+ */
+delay(50);
+
+
   
 }
