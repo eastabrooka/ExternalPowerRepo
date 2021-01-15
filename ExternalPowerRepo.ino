@@ -22,6 +22,8 @@
 #define SAMPLE_WINDOW 60000
 //5*MINUTE
 
+#define GPIO14_ALRT 14
+#define ALRT_LATCHED 0
 
 Adafruit_ADS1115 ads(0x48);
 
@@ -30,12 +32,19 @@ String apiKey = APIKEY;
 const char* server = "api.thingspeak.com";
 
 void setup() {
+  pinMode(GPIO14_ALRT, INPUT);
+ 
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("\nPower Monitor Booting");
 
   Serial.println("Bringing External ADC Online");
   ads.begin();
+
+  // Setup 3V comparator on channel 0
+  ads.startComparator_SingleEnded(0, 100);
+
+
 }
 
 // Post to Thingspeak. HTTP Push. 
@@ -96,23 +105,32 @@ void CheckForSendUpdate() {
 }
 
 void loop() {
+
   CheckForSendUpdate();
 
   int16_t adc0, adc1, adc2, adc3;
  
-adc0 = ads.readADC_SingleEnded(0);
-Serial.print("AIN0: ");
-Serial.println(adc0);
-/*Serial.print("AIN1: ");
-Serial.println(adc1);
-Serial.print("AIN2: ");
-Serial.println(adc2);
-Serial.print("AIN3: ");
-Serial.println(adc3);
-Serial.println(" ");
- */
+//adc0 = ads.readADC_SingleEnded(0);
+//Serial.print("AIN0: ");
+//Serial.println(adc0);
 delay(50);
 
 
+
+  // If the button is pressed
+  if(digitalRead(GPIO14_ALRT) == ALRT_LATCHED)
+  {
+    Serial.println("Pulse Detected");
+    // Comparator will only de-assert after a read
+    adc0 = ads.getLastConversionResults();
+    Serial.print("AIN0: "); Serial.println(adc0);
+  }
+ 
+
+
+  
+  delay(100);
+
+  
   
 }
