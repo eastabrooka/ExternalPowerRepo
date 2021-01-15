@@ -27,6 +27,8 @@
 
 Adafruit_ADS1115 ads(0x48);
 
+int GlobalBlinks = 0; 
+
 // replace with your channel’s thingspeak API key and your SSID and password
 String apiKey = APIKEY;
 const char* server = "api.thingspeak.com";
@@ -52,13 +54,10 @@ void ThingSpeakTransmit()
 {
   WiFiClient client;
   if (client.connect(server, 80)) {
-    float t; 
-    t = 69;
     String postStr = apiKey;
     postStr += "&field1=";
-    postStr += String(t);
+    postStr += String(GlobalBlinks);
     postStr += "\r\n\r\n";
-
     client.print("POST /update HTTP/1.1\n");
     client.print("Host: api.thingspeak.com\n");
     client.print("Connection: close\n");
@@ -69,6 +68,7 @@ void ThingSpeakTransmit()
     client.print("\n\n");
     client.print(postStr);
     Serial.println("Sending data to Thingspeak");
+    GlobalBlinks = 0;
   }
   client.stop();
 }
@@ -124,13 +124,7 @@ delay(50);
     // Comparator will only de-assert after a read
     adc0 = ads.getLastConversionResults();
     Serial.print("AIN0: "); Serial.println(adc0);
+    GlobalBlinks++;
+    delay(10);
   }
- 
-
-
-  
-  delay(100);
-
-  
-  
 }
