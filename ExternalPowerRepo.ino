@@ -1,15 +1,15 @@
- /*************************************************************************
- * 
- * External Power Sensor
- * __________________
- * [2021] - Alex Eastabrook
- * Licence Soon.. 
- * 
- * This is the code for the ESP8266, ADS1115 and Adafruit ALS-PT19.  
- * The Package is installed in the Utility Box, Counting Pulses, and then relaying them to the ThingSpeak Platform. 
- * 
- */
-  
+/*************************************************************************
+
+  External Power Sensor
+  __________________
+  [2021] - Alex Eastabrook
+  Licence Soon..
+
+  This is the code for the ESP8266, ADS1115 and Adafruit ALS-PT19.
+  The Package is installed in the Utility Box, Counting Pulses, and then relaying them to the ThingSpeak Platform.
+
+*/
+
 #include "ESP8266WiFi.h"
 #include "WiFiClient.h"
 #include <Wire.h>
@@ -19,15 +19,14 @@
 
 #define SECOND 1000
 #define MINUTE 60*SECOND
-#define SAMPLE_WINDOW 60000
-//5*MINUTE
+#define SAMPLE_WINDOW 5*MINUTE
 
 #define GPIO14_ALRT 14
 #define ALRT_LATCHED 0
 
 Adafruit_ADS1115 ads(0x48);
 
-int GlobalBlinks = 0; 
+int GlobalBlinks = 0;
 
 // replace with your channel’s thingspeak API key and your SSID and password
 String apiKey = APIKEY;
@@ -35,7 +34,7 @@ const char* server = "api.thingspeak.com";
 
 void setup() {
   pinMode(GPIO14_ALRT, INPUT);
- 
+
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("\nPower Monitor Booting");
@@ -45,11 +44,9 @@ void setup() {
 
   // Setup 3V comparator on channel 0
   ads.startComparator_SingleEnded(0, 100);
-
-
 }
 
-// Post to Thingspeak. HTTP Push. 
+// Post to Thingspeak. HTTP Push.
 void ThingSpeakTransmit()
 {
   WiFiClient client;
@@ -73,21 +70,21 @@ void ThingSpeakTransmit()
   client.stop();
 }
 
-//Enable Radios, and Trigger Send of Data. 
+//Enable Radios, and Trigger Send of Data.
 static unsigned long LastUpdate;
 void DoUpdate()
 {
   // Bring up the WiFi connection
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID ,WIFI_PSK);
+  WiFi.begin(WIFI_SSID , WIFI_PSK);
 
+  Serial.print("Connecting to Wi-Fi");
   // Wait until the connection has been confirmed before continuing
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
-  Serial.println("Update Here");
+  Serial.println("On Lan");
   ThingSpeakTransmit();
   WiFi.mode( WIFI_OFF );
   WiFi.forceSleepBegin();
@@ -99,7 +96,8 @@ void CheckForSendUpdate() {
   if (millis() - LastUpdate >= SAMPLE_WINDOW)
   {
     LastUpdate = millis();  //get ready for the next iteration
-    Serial.println("Interval");
+    Serial.println("Sample Window - Hit");
+    Serial.println("Phoning Home Update.");
     DoUpdate();
   }
 }
@@ -108,23 +106,14 @@ void loop() {
 
   CheckForSendUpdate();
 
-  int16_t adc0, adc1, adc2, adc3;
- 
-//adc0 = ads.readADC_SingleEnded(0);
-//Serial.print("AIN0: ");
-//Serial.println(adc0);
-delay(50);
-
-
-
   // If the button is pressed
-  if(digitalRead(GPIO14_ALRT) == ALRT_LATCHED)
+  if (digitalRead(GPIO14_ALRT) == ALRT_LATCHED)
   {
-    Serial.println("Pulse Detected");
+    Serial.print("Pulse Detected ");
+    Serial.println(GlobalBlinks,DEC);
     // Comparator will only de-assert after a read
-    adc0 = ads.getLastConversionResults();
-    Serial.print("AIN0: "); Serial.println(adc0);
+    ads.getLastConversionResults();
     GlobalBlinks++;
-    delay(10);
+    delay(50);
   }
 }
